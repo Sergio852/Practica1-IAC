@@ -43,7 +43,7 @@ variable "clave_ssh" {
 variable "red_nat" {
   description = "Rango de la red NAT con DHCP"
   type        = string
-  default     = "192.168.100.0/24"
+  default     = "192.168.234.0/24"
 }
 
 variable "ip_web_datos" {
