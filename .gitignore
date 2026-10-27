@@ -1,0 +1,14 @@
+# OpenTofu
+opentofu/.terraform/
+opentofu/*.tfstate
+opentofu/*.tfstate.*
+opentofu/crash.log
+
+# Inventario generado por OpenTofu
+ansible/inventario.ini
+
+# Imágenes y ficheros grandes
+*.qcow2
+*.img
+*.iso
+*.raw
