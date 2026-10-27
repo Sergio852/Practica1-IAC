@@ -1,0 +1,11 @@
+version: 2
+ethernets:
+  nat:
+    match:
+      macaddress: "${mac_nat}"
+    dhcp4: true
+  datos:
+    match:
+      macaddress: "${mac_datos}"
+    addresses:
+      - ${ip_datos}/24

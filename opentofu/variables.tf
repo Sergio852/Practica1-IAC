@@ -57,3 +57,9 @@ variable "ip_bd_datos" {
   type        = string
   default     = "10.0.0.11"
 }
+
+variable "usuario" {
+  description = "Usuario que se crea en las máquinas para entrar por SSH y Ansible"
+  type        = string
+  default     = "sergio"
+}
