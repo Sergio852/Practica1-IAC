@@ -1,0 +1,10 @@
+# Generado por Terraform/OpenTofu. No editar a mano.
+%{ for grupo, nombres in grupos ~}
+[${grupo}]
+%{ for nombre in nombres ~}
+${nombre} ansible_host=${ips_nat[nombre]} ip_datos=${maquinas[nombre].ip_datos}
+%{ endfor ~}
+
+%{ endfor ~}
+[all:vars]
+ansible_user=${usuario}
