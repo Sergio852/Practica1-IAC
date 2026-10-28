@@ -1,0 +1,13 @@
+# Actualiza el sistema e instala los paquetes comunes
+- name: Actualizar la caché de paquetes y el sistema
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+    upgrade: dist
+    lock_timeout: 300
+
+- name: Instalar los paquetes comunes
+  ansible.builtin.apt:
+    name: "{{ paquetes_comunes }}"
+    state: present
+    lock_timeout: 300

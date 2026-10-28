@@ -1,0 +1,7 @@
+# Configuración del escenario del Proyecto 1
+
+- name: Configuración común de todas las máquinas
+  hosts: all
+  become: true
+  roles:
+    - commons
