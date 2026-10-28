@@ -11,3 +11,9 @@
   become: true
   roles:
     - bd
+
+- name: Servidor web
+  hosts: servidores_web
+  become: true
+  roles:
+    - web
