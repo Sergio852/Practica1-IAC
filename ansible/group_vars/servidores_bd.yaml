@@ -1,0 +1,2 @@
+# MariaDB escucha solo en la IP de la red de datos
+mariadb_bind_address: "{{ ip_datos }}"

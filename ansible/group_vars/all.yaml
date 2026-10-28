@@ -1,0 +1,14 @@
+# Paquetes que se instalan en todas las máquinas
+paquetes_comunes:
+  - vim
+  - curl
+  - htop
+
+# Base de datos de la aplicación
+bd_nombre: guestbook
+bd_usuario: guestbook
+bd_password: "Gu3stb00k_2026"
+
+# IP de cada máquina en la red de datos, tomadas del inventario generado
+bd_ip: "{{ hostvars[groups['servidores_bd'][0]]['ip_datos'] }}"
+web_ip: "{{ hostvars[groups['servidores_web'][0]]['ip_datos'] }}"
