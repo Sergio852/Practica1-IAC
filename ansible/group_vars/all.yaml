@@ -13,3 +13,9 @@ bd_password: "Gu3stb00k_2026"
 # web_ips es una lista: si hay varios servidores web, incluye a todos.
 bd_ip: "{{ hostvars[groups['servidores_bd'][0]]['ip_datos'] }}"
 web_ips: "{{ groups['servidores_web'] | map('extract', hostvars, 'ip_datos') | list }}"
+
+# Aplicación guestbook_php, fijada a un commit concreto para que el despliegue sea reproducible
+app_repo: "https://github.com/josedom24/guestbook_php.git"
+app_version: "a5b6c516e2aab8449e1e838284b2eff97813251d"
+app_raw_url: "https://raw.githubusercontent.com/josedom24/guestbook_php/{{ app_version }}"
+app_tabla: messages

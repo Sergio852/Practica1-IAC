@@ -37,3 +37,28 @@
     login_unix_socket: /run/mysqld/mysqld.sock
   loop: "{{ web_ips }}"
   no_log: true
+
+- name: Descargar schema.sql de la versión fijada de la aplicación
+  ansible.builtin.get_url:
+    url: "{{ app_raw_url }}/schema.sql"
+    dest: /root/guestbook-schema.sql
+    mode: "0600"
+
+- name: Comprobar si las tablas de la aplicación ya existen
+  community.mysql.mysql_query:
+    login_db: information_schema
+    query: "SELECT COUNT(*) AS n FROM tables WHERE table_schema = %s AND table_name = %s"
+    positional_args:
+      - "{{ bd_nombre }}"
+      - "{{ app_tabla }}"
+    login_unix_socket: /run/mysqld/mysqld.sock
+  register: tablas_app
+  changed_when: false
+
+- name: Crear las tablas de la aplicación con schema.sql si no existen
+  community.mysql.mysql_db:
+    name: "{{ bd_nombre }}"
+    state: import
+    target: /root/guestbook-schema.sql
+    login_unix_socket: /run/mysqld/mysqld.sock
+  when: tablas_app.query_result[0][0].n | int == 0
