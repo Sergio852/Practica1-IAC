@@ -19,3 +19,21 @@
     name: mariadb
     state: started
     enabled: true
+
+- name: Crear la base de datos de la aplicación
+  community.mysql.mysql_db:
+    name: "{{ bd_nombre }}"
+    state: present
+    login_unix_socket: /run/mysqld/mysqld.sock
+
+- name: Crear el usuario de la aplicación, solo accesible desde cada servidor web
+  community.mysql.mysql_user:
+    name: "{{ bd_usuario }}"
+    host: "{{ item }}"
+    password: "{{ bd_password }}"
+    priv: "{{ bd_nombre }}.*:SELECT,INSERT,UPDATE,DELETE"
+    column_case_sensitive: true
+    state: present
+    login_unix_socket: /run/mysqld/mysqld.sock
+  loop: "{{ web_ips }}"
+  no_log: true

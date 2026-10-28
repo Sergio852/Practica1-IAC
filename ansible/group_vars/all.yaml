@@ -9,6 +9,7 @@ bd_nombre: guestbook
 bd_usuario: guestbook
 bd_password: "Gu3stb00k_2026"
 
-# IP de cada máquina en la red de datos, tomadas del inventario generado
+# IP en la red de datos, tomadas del inventario generado por Terraform/OpenTofu.
+# web_ips es una lista: si hay varios servidores web, incluye a todos.
 bd_ip: "{{ hostvars[groups['servidores_bd'][0]]['ip_datos'] }}"
-web_ip: "{{ hostvars[groups['servidores_web'][0]]['ip_datos'] }}"
+web_ips: "{{ groups['servidores_web'] | map('extract', hostvars, 'ip_datos') | list }}"
