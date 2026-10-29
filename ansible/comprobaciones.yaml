@@ -1,0 +1,90 @@
+# Comprobaciones del escenario: ejecutar después de site.yaml
+#   ansible-playbook comprobaciones.yaml
+
+- name: Comprobar la aplicación desde mi equipo
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    nombre_web: "{{ hostvars[groups['servidores_web'][0]]['vhost_nombre'] }}"
+  tasks:
+    - name: Pedir la página principal por el nombre del virtual host
+      ansible.builtin.uri:
+        url: "http://{{ nombre_web }}/"
+        return_content: true
+      register: pagina
+
+    - name: Verificar que responde la aplicación
+      ansible.builtin.assert:
+        that: "'Guestbook' in pagina.content"
+        success_msg: "OK: http://{{ nombre_web }}/ responde con la aplicación (HTTP {{ pagina.status }})"
+
+    - name: Consultar la API de mensajes
+      ansible.builtin.uri:
+        url: "http://{{ nombre_web }}/api/lista"
+        return_content: true
+      register: api
+
+    - name: Mostrar cuántos mensajes hay en la base de datos
+      ansible.builtin.debug:
+        msg: "OK: la API devuelve {{ api.json | length }} mensaje(s) leídos de MariaDB"
+
+- name: Comprobar que web puede conectarse a la base de datos
+  hosts: servidores_web
+  gather_facts: false
+  tasks:
+    - name: Conectar a MariaDB con el usuario de la aplicación usando PDO
+      ansible.builtin.command:
+        argv:
+          - php
+          - -r
+          - "new PDO('mysql:host={{ bd_ip }};dbname={{ bd_nombre }}', '{{ bd_usuario }}', '{{ bd_password }}'); echo 'conexión aceptada';"
+      register: conexion_web
+      changed_when: false
+      no_log: true
+
+    - name: Mostrar el resultado
+      ansible.builtin.debug:
+        msg: "OK: desde web ({{ ip_datos }}) hacia {{ bd_ip }}:3306 → {{ conexion_web.stdout }}"
+
+- name: Comprobar que la base de datos rechaza conexiones desde otros sitios
+  hosts: servidores_bd
+  gather_facts: false
+  tasks:
+    - name: Intentar conectar con el usuario de la aplicación desde bd (debe rechazarse)
+      ansible.builtin.command:
+        argv:
+          - mariadb
+          - -h
+          - "{{ bd_ip }}"
+          - -u
+          - "{{ bd_usuario }}"
+          - "-p{{ bd_password }}"
+          - -e
+          - "SELECT 1"
+      register: conexion_bd
+      changed_when: false
+      failed_when: conexion_bd.rc == 0
+      no_log: true
+
+    - name: Mostrar el resultado
+      ansible.builtin.debug:
+        msg: "OK: desde bd ({{ ip_datos }}) → conexión rechazada: {{ conexion_bd.stderr }}"
+
+- name: Comprobar que MariaDB no es accesible desde mi equipo
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    ip_nat_bd: "{{ hostvars[groups['servidores_bd'][0]]['ansible_host'] }}"
+  tasks:
+    - name: Verificar que el puerto 3306 de bd está cerrado en la red NAT
+      ansible.builtin.wait_for:
+        host: "{{ ip_nat_bd }}"
+        port: 3306
+        state: stopped
+        timeout: 5
+
+    - name: Mostrar el resultado
+      ansible.builtin.debug:
+        msg: "OK: desde mi equipo, {{ ip_nat_bd }}:3306 no acepta conexiones"
