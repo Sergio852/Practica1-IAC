@@ -49,3 +49,20 @@
     cmd: a2dissite 000-default
     removes: /etc/apache2/sites-enabled/000-default.conf
   notify: Recargar Apache
+
+- name: Desplegar los ficheros de la versión fijada de la aplicación
+  ansible.builtin.get_url:
+    url: "{{ app_raw_url }}/{{ item }}"
+    dest: "{{ vhost_raiz }}/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ app_ficheros }}"
+
+- name: Generar config.php con los datos de conexión a la base de datos
+  ansible.builtin.template:
+    src: config.php.j2
+    dest: "{{ vhost_raiz }}/config.php"
+    owner: root
+    group: www-data
+    mode: "0640"
