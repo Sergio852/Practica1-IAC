@@ -1,3 +1,3 @@
 # Virtual host de la aplicación
-vhost_nombre: "www.sergio.org"
+vhost_nombre: "www.sergiomesa.org"
 vhost_raiz: /var/www/guestbook
