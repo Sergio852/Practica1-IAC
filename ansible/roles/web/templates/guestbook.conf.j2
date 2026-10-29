@@ -1,0 +1,14 @@
+# Virtual host de guestbook_php. Generado por Ansible.
+<VirtualHost *:80>
+    ServerName {{ vhost_nombre }}
+    DocumentRoot {{ vhost_raiz }}
+
+    <Directory {{ vhost_raiz }}>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/guestbook_error.log
+    CustomLog ${APACHE_LOG_DIR}/guestbook_access.log combined
+</VirtualHost>

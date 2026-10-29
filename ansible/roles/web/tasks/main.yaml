@@ -20,3 +20,32 @@
     name: apache2
     state: started
     enabled: true
+
+- name: Crear el DocumentRoot de la aplicación
+  ansible.builtin.file:
+    path: "{{ vhost_raiz }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Crear el virtual host de la aplicación
+  ansible.builtin.template:
+    src: guestbook.conf.j2
+    dest: /etc/apache2/sites-available/guestbook.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recargar Apache
+
+- name: Activar el virtual host de la aplicación
+  ansible.builtin.command:
+    cmd: a2ensite guestbook
+    creates: /etc/apache2/sites-enabled/guestbook.conf
+  notify: Recargar Apache
+
+- name: Desactivar el sitio por defecto de Apache
+  ansible.builtin.command:
+    cmd: a2dissite 000-default
+    removes: /etc/apache2/sites-enabled/000-default.conf
+  notify: Recargar Apache
