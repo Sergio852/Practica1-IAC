@@ -5,6 +5,7 @@ resource "libvirt_domain" "maquina" {
   name      = "p1-${each.key}"
   memory    = each.value.memoria
   vcpu      = 1
+  autostart = true
   cloudinit = libvirt_cloudinit_disk.init[each.key].id
 
   cpu {
