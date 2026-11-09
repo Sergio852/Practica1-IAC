@@ -16,17 +16,14 @@ resource "libvirt_domain" "maquina" {
     volume_id = libvirt_volume.disco[each.key].id
   }
 
-  # Red NAT con DHCP: Terraform espera a que la máquina reciba IP
-  network_interface {
-    network_id     = libvirt_network.nat.id
-    mac            = each.value.mac_nat
-    wait_for_lease = true
-  }
-
-  # Red de datos aislada: IP estática puesta por cloud-init
-  network_interface {
-    network_id = libvirt_network.datos.id
-    mac        = each.value.mac_datos
+  # Una tarjeta por cada red de la máquina. Terraform espera a que la de la NAT reciba IP.
+  dynamic "network_interface" {
+    for_each = each.value.redes
+    content {
+      network_id     = local.ids_redes[network_interface.value.red]
+      mac            = network_interface.value.mac
+      wait_for_lease = network_interface.value.red == "nat"
+    }
   }
 
   console {

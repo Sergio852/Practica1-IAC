@@ -2,7 +2,7 @@
 %{ for grupo, nombres in grupos ~}
 [${grupo}]
 %{ for nombre in nombres ~}
-${nombre} ansible_host=${ips_nat[nombre]} ip_datos=${maquinas[nombre].ip_datos}
+${nombre} ansible_host=${ips_nat[nombre]} ${vars_red[nombre]}
 %{ endfor ~}
 
 %{ endfor ~}

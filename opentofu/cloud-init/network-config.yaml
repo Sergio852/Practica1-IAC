@@ -1,11 +1,13 @@
 version: 2
 ethernets:
-  nat:
+%{ for r in redes }
+  ${r.red}:
     match:
-      macaddress: "${mac_nat}"
+      macaddress: "${r.mac}"
+%{ if r.ip == null }
     dhcp4: true
-  datos:
-    match:
-      macaddress: "${mac_datos}"
+%{ else }
     addresses:
-      - ${ip_datos}/24
+      - ${r.ip}/24
+%{ endif }
+%{ endfor }

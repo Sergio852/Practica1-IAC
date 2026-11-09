@@ -12,8 +12,6 @@ resource "libvirt_cloudinit_disk" "init" {
   })
 
   network_config = templatefile("${path.module}/cloud-init/network-config.yaml", {
-    mac_nat   = each.value.mac_nat
-    mac_datos = each.value.mac_datos
-    ip_datos  = each.value.ip_datos
+    redes = each.value.redes
   })
 }
