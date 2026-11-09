@@ -39,6 +39,12 @@
           - "3650"
           - -subj
           - "/CN={{ ca_nombre }}"
+          - -addext
+          - basicConstraints=critical,CA:TRUE
+          - -addext
+          - keyUsage=critical,keyCertSign,cRLSign
+          - -addext
+          - subjectKeyIdentifier=hash
           - -out
           - "{{ pki_dir }}/ca.crt"
         creates: "{{ pki_dir }}/ca.crt"
@@ -74,6 +80,8 @@
           basicConstraints=CA:FALSE
           keyUsage=digitalSignature,keyEncipherment
           extendedKeyUsage=serverAuth
+          authorityKeyIdentifier=keyid,issuer
+          subjectKeyIdentifier=hash
         dest: "{{ pki_dir }}/proxy.ext"
         mode: "0644"
 
@@ -106,6 +114,7 @@
     owner: root
     group: root
     mode: "0644"
+  notify: Recargar Nginx
 
 - name: Copiar la clave privada al proxy
   ansible.builtin.copy:
@@ -114,6 +123,7 @@
     owner: root
     group: root
     mode: "0600"
+  notify: Recargar Nginx
 
 - name: Instalar Nginx
   ansible.builtin.apt:
