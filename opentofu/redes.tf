@@ -22,3 +22,10 @@ resource "libvirt_network" "datos" {
   mode      = "none"
   autostart = true
 }
+
+# Red entre el proxy y web: sin NAT, sin DHCP y sin IP en el anfitrión.
+resource "libvirt_network" "front" {
+  name      = "p1-front"
+  mode      = "none"
+  autostart = true
+}
