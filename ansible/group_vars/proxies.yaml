@@ -4,3 +4,6 @@ ca_nombre: "CA de Sergio"
 
 # Nombre del virtual host al que sirve el proxy: el mismo que usa web
 proxy_nombre: "{{ hostvars[groups['servidores_web'][0]]['vhost_nombre'] }}"
+
+# IP de web en la red p1-front (la que hay entre el proxy y web), tomada del inventario
+web_front_ip: "{{ hostvars[groups['servidores_web'][0]]['ip_front'] }}"

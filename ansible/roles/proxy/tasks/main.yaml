@@ -114,3 +114,41 @@
     owner: root
     group: root
     mode: "0600"
+
+- name: Instalar Nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    lock_timeout: 300
+
+- name: Quitar el sitio por defecto de Nginx
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Recargar Nginx
+
+- name: Crear la configuración del proxy inverso
+  ansible.builtin.template:
+    src: guestbook.conf.j2
+    dest: /etc/nginx/sites-available/guestbook
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recargar Nginx
+
+- name: Activar el sitio del proxy inverso
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/guestbook
+    dest: /etc/nginx/sites-enabled/guestbook
+    state: link
+  notify: Recargar Nginx
+
+- name: Comprobar la sintaxis de la configuración de Nginx
+  ansible.builtin.command: nginx -t
+  changed_when: false
+
+- name: Asegurar que Nginx está arrancado y habilitado
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true
