@@ -3,9 +3,23 @@ upstream web_apache {
     server {{ web_front_ip }}:80;
 }
 
+# HTTP: solo redirige a HTTPS
 server {
     listen 80;
     server_name {{ proxy_nombre }};
+    return 301 https://{{ proxy_nombre }}$request_uri;
+}
+
+# HTTPS: sirve la aplicación a través de web
+server {
+    listen 443 ssl;
+    server_name {{ proxy_nombre }};
+
+    ssl_certificate     /etc/ssl/certs/proxy.crt;
+    ssl_certificate_key /etc/ssl/private/proxy.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+
+    add_header Strict-Transport-Security "max-age={{ hsts_max_age }}" always;
 
     location / {
         proxy_pass http://web_apache;

@@ -7,3 +7,6 @@ proxy_nombre: "{{ hostvars[groups['servidores_web'][0]]['vhost_nombre'] }}"
 
 # IP de web en la red p1-front (la que hay entre el proxy y web), tomada del inventario
 web_front_ip: "{{ hostvars[groups['servidores_web'][0]]['ip_front'] }}"
+
+# HSTS: tiempo (en segundos) que el navegador recuerda que este sitio solo va por HTTPS
+hsts_max_age: 300
