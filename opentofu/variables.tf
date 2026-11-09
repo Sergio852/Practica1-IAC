@@ -63,3 +63,27 @@ variable "usuario" {
   type        = string
   default     = "sergio"
 }
+
+variable "imagen_proxy" {
+  description = "Volumen base Debian 13 para el proxy"
+  type        = string
+  default     = "debian13-base.qcow2"
+}
+
+variable "memoria_proxy" {
+  description = "Memoria (MiB) del proxy"
+  type        = number
+  default     = 512
+}
+
+variable "ip_proxy_front" {
+  description = "IP estática del proxy en la red p1-front"
+  type        = string
+  default     = "10.0.1.10"
+}
+
+variable "ip_web_front" {
+  description = "IP estática de web en la red p1-front"
+  type        = string
+  default     = "10.0.1.11"
+}

@@ -3,6 +3,15 @@
 # y las demás llevan IP estática.
 locals {
   maquinas = {
+    proxy = {
+      imagen  = var.imagen_proxy
+      memoria = var.memoria_proxy
+      grupo   = "proxies"
+      redes = [
+        { red = "nat", mac = "52:54:00:01:00:12", ip = null },
+        { red = "front", mac = "52:54:00:03:00:12", ip = var.ip_proxy_front },
+      ]
+    }
     web = {
       imagen  = var.imagen_web
       memoria = var.memoria_web
@@ -10,6 +19,7 @@ locals {
       redes = [
         { red = "nat", mac = "52:54:00:01:00:10", ip = null },
         { red = "datos", mac = "52:54:00:02:00:10", ip = var.ip_web_datos },
+        { red = "front", mac = "52:54:00:03:00:10", ip = var.ip_web_front },
       ]
     }
     bd = {
