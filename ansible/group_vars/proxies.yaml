@@ -1,0 +1,6 @@
+# PKI propia: se genera en mi equipo, en un directorio que no se sube al repositorio
+pki_dir: "{{ playbook_dir }}/pki"
+ca_nombre: "CA de Sergio"
+
+# Nombre del virtual host al que sirve el proxy: el mismo que usa web
+proxy_nombre: "{{ hostvars[groups['servidores_web'][0]]['vhost_nombre'] }}"

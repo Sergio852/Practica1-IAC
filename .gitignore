@@ -12,3 +12,4 @@ ansible/inventario.ini
 *.img
 *.iso
 *.raw
+ansible/pki/

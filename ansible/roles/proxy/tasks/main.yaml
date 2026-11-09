@@ -1,0 +1,116 @@
+# Crea una CA propia y un certificado para el proxy, firmado por ella.
+# La PKI vive en mi equipo (ansible/pki/, fuera del repositorio). Así, al destruir y
+# recrear las máquinas se mantiene la misma CA y el navegador sigue fiándose de ella.
+# Cada tarea es un comando de openssl y solo se ejecuta si su fichero no existe.
+
+- name: Crear la CA y el certificado del proxy en mi equipo
+  delegate_to: localhost
+  become: false
+  run_once: true
+  block:
+    - name: Crear el directorio de la PKI
+      ansible.builtin.file:
+        path: "{{ pki_dir }}"
+        state: directory
+        mode: "0700"
+
+    - name: Crear la clave privada de la CA
+      ansible.builtin.command:
+        argv:
+          - openssl
+          - genrsa
+          - -out
+          - "{{ pki_dir }}/ca.key"
+          - "4096"
+        creates: "{{ pki_dir }}/ca.key"
+
+    - name: Crear el certificado de la CA
+      ansible.builtin.command:
+        argv:
+          - openssl
+          - req
+          - -x509
+          - -new
+          - -nodes
+          - -key
+          - "{{ pki_dir }}/ca.key"
+          - -sha256
+          - -days
+          - "3650"
+          - -subj
+          - "/CN={{ ca_nombre }}"
+          - -out
+          - "{{ pki_dir }}/ca.crt"
+        creates: "{{ pki_dir }}/ca.crt"
+
+    - name: Crear la clave privada del proxy
+      ansible.builtin.command:
+        argv:
+          - openssl
+          - genrsa
+          - -out
+          - "{{ pki_dir }}/proxy.key"
+          - "2048"
+        creates: "{{ pki_dir }}/proxy.key"
+
+    - name: Crear la petición de certificado (CSR)
+      ansible.builtin.command:
+        argv:
+          - openssl
+          - req
+          - -new
+          - -key
+          - "{{ pki_dir }}/proxy.key"
+          - -subj
+          - "/CN={{ proxy_nombre }}"
+          - -out
+          - "{{ pki_dir }}/proxy.csr"
+        creates: "{{ pki_dir }}/proxy.csr"
+
+    - name: Crear el fichero de extensiones con el SAN
+      ansible.builtin.copy:
+        content: |
+          subjectAltName=DNS:{{ proxy_nombre }}
+          basicConstraints=CA:FALSE
+          keyUsage=digitalSignature,keyEncipherment
+          extendedKeyUsage=serverAuth
+        dest: "{{ pki_dir }}/proxy.ext"
+        mode: "0644"
+
+    - name: Firmar el certificado con la CA
+      ansible.builtin.command:
+        argv:
+          - openssl
+          - x509
+          - -req
+          - -in
+          - "{{ pki_dir }}/proxy.csr"
+          - -CA
+          - "{{ pki_dir }}/ca.crt"
+          - -CAkey
+          - "{{ pki_dir }}/ca.key"
+          - -CAcreateserial
+          - -days
+          - "365"
+          - -sha256
+          - -extfile
+          - "{{ pki_dir }}/proxy.ext"
+          - -out
+          - "{{ pki_dir }}/proxy.crt"
+        creates: "{{ pki_dir }}/proxy.crt"
+
+- name: Copiar el certificado al proxy
+  ansible.builtin.copy:
+    src: "{{ pki_dir }}/proxy.crt"
+    dest: /etc/ssl/certs/proxy.crt
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Copiar la clave privada al proxy
+  ansible.builtin.copy:
+    src: "{{ pki_dir }}/proxy.key"
+    dest: /etc/ssl/private/proxy.key
+    owner: root
+    group: root
+    mode: "0600"

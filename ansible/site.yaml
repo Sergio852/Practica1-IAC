@@ -17,3 +17,9 @@
   become: true
   roles:
     - web
+
+- name: Proxy inverso
+  hosts: proxies
+  become: true
+  roles:
+    - proxy
