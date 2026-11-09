@@ -15,3 +15,7 @@ hsts_max_age: 300
 cache_dir: /var/cache/nginx-estaticos
 cache_max: 100m
 cache_validez: 10m
+
+# Límite de peticiones a /nuevo: tasa sostenida por IP y ráfaga permitida
+limite_tasa: 1r/s
+limite_rafaga: 5

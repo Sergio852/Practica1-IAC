@@ -3,6 +3,9 @@
 # Caché de ficheros estáticos
 proxy_cache_path {{ cache_dir }} levels=1:2 keys_zone=estaticos:10m max_size={{ cache_max }} inactive=60m use_temp_path=off;
 
+# Límite de peticiones: se cuenta por IP del cliente
+limit_req_zone $binary_remote_addr zone=nuevo:10m rate={{ limite_tasa }};
+
 upstream web_apache {
     server {{ web_front_ip }}:80;
 }
@@ -39,7 +42,14 @@ server {
         add_header Strict-Transport-Security "max-age={{ hsts_max_age }}" always;
     }
 
-    # Todo lo demás (las páginas de la aplicación) no se cachea
+    # Formulario: limita las peticiones y responde 429 si se superan
+    location /nuevo {
+        limit_req zone=nuevo burst={{ limite_rafaga }} nodelay;
+        limit_req_status 429;
+        proxy_pass http://web_apache;
+    }
+
+    # Todo lo demás (las páginas de la aplicación) no se cachea ni se limita
     location / {
         proxy_pass http://web_apache;
     }
