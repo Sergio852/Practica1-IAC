@@ -1,4 +1,8 @@
 # Proxy inverso hacia el servidor web. Generado por Ansible.
+
+# Caché de ficheros estáticos
+proxy_cache_path {{ cache_dir }} levels=1:2 keys_zone=estaticos:10m max_size={{ cache_max }} inactive=60m use_temp_path=off;
+
 upstream web_apache {
     server {{ web_front_ip }}:80;
 }
@@ -21,11 +25,22 @@ server {
 
     add_header Strict-Transport-Security "max-age={{ hsts_max_age }}" always;
 
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # Ficheros estáticos: se sirven desde la caché del proxy
+    location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
+        proxy_pass http://web_apache;
+        proxy_cache estaticos;
+        proxy_cache_valid 200 {{ cache_validez }};
+        add_header X-Cache-Status $upstream_cache_status always;
+        add_header Strict-Transport-Security "max-age={{ hsts_max_age }}" always;
+    }
+
+    # Todo lo demás (las páginas de la aplicación) no se cachea
     location / {
         proxy_pass http://web_apache;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }

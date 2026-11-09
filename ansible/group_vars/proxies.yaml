@@ -10,3 +10,8 @@ web_front_ip: "{{ hostvars[groups['servidores_web'][0]]['ip_front'] }}"
 
 # HSTS: tiempo (en segundos) que el navegador recuerda que este sitio solo va por HTTPS
 hsts_max_age: 300
+
+# Caché de ficheros estáticos del proxy
+cache_dir: /var/cache/nginx-estaticos
+cache_max: 100m
+cache_validez: 10m
