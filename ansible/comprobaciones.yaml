@@ -1,33 +1,104 @@
 # Comprobaciones del escenario: ejecutar después de site.yaml
 #   ansible-playbook comprobaciones.yaml
 
-- name: Comprobar la aplicación desde mi equipo
+- name: Comprobar la aplicación desde mi equipo, a través del proxy
   hosts: localhost
   connection: local
   gather_facts: false
   vars:
     nombre_web: "{{ hostvars[groups['servidores_web'][0]]['vhost_nombre'] }}"
+    ca_propia: "{{ playbook_dir }}/pki/ca.crt"
   tasks:
-    - name: Pedir la página principal por el nombre del virtual host
+    - name: Pedir la versión HTTP sin seguir la redirección
       ansible.builtin.uri:
         url: "http://{{ nombre_web }}/"
+        follow_redirects: none
+        status_code: 301
+      register: redireccion
+
+    - name: Verificar que HTTP redirige a HTTPS
+      ansible.builtin.assert:
+        that: (redireccion.location | default('')) == ('https://' ~ nombre_web ~ '/')
+        success_msg: "OK: HTTP responde 301 hacia {{ redireccion.location }}"
+
+    - name: Pedir la página principal por HTTPS con la CA propia
+      ansible.builtin.uri:
+        url: "https://{{ nombre_web }}/"
+        ca_path: "{{ ca_propia }}"
         return_content: true
       register: pagina
 
-    - name: Verificar que responde la aplicación
+    - name: Verificar que responde la aplicación y que envía HSTS
       ansible.builtin.assert:
-        that: "'Guestbook' in pagina.content"
-        success_msg: "OK: http://{{ nombre_web }}/ responde con la aplicación (HTTP {{ pagina.status }})"
+        that:
+          - "'Guestbook' in pagina.content"
+          - pagina.strict_transport_security is defined
+        success_msg: "OK: https://{{ nombre_web }}/ responde con la aplicación (HTTP {{ pagina.status }}) y HSTS ({{ pagina.strict_transport_security }})"
+
+    - name: Intentar HTTPS sin la CA propia (debe fallar)
+      ansible.builtin.uri:
+        url: "https://{{ nombre_web }}/"
+      register: sin_ca
+      failed_when: false
+
+    - name: Verificar que sin la CA el certificado no es de confianza
+      ansible.builtin.assert:
+        that:
+          - sin_ca.status == -1
+          - "'certificate' in (sin_ca.msg | lower)"
+        success_msg: "OK: sin la CA propia el certificado se rechaza"
+
+    - name: Pedir dos veces seguidas un fichero estático
+      ansible.builtin.uri:
+        url: "https://{{ nombre_web }}/style.css"
+        ca_path: "{{ ca_propia }}"
+      loop: [1, 2]
+      register: css
+
+    - name: Verificar que la segunda petición sale de la caché del proxy
+      ansible.builtin.assert:
+        that: css.results[1].x_cache_status == 'HIT'
+        success_msg: "OK: caché del proxy, primera petición {{ css.results[0].x_cache_status }} y segunda {{ css.results[1].x_cache_status }}"
 
     - name: Consultar la API de mensajes
       ansible.builtin.uri:
-        url: "http://{{ nombre_web }}/api/lista"
+        url: "https://{{ nombre_web }}/api/lista"
+        ca_path: "{{ ca_propia }}"
         return_content: true
       register: api
 
     - name: Mostrar cuántos mensajes hay en la base de datos
       ansible.builtin.debug:
         msg: "OK: la API devuelve {{ api.json | length }} mensaje(s) leídos de MariaDB"
+
+    - name: Hacer una petición marcada que intenta falsear mi IP
+      ansible.builtin.uri:
+        url: "https://{{ nombre_web }}/"
+        ca_path: "{{ ca_propia }}"
+        headers:
+          X-Forwarded-For: "1.2.3.4"
+          User-Agent: "comprobacion-ip-real"
+
+    - name: Esperar a que el límite de peticiones se recupere
+      ansible.builtin.pause:
+        seconds: 6
+
+    - name: Lanzar 20 peticiones seguidas a /nuevo
+      ansible.builtin.shell: |
+        for i in $(seq 1 20); do
+          curl -s -o /dev/null -w "%{http_code}\n" --cacert {{ ca_propia }} https://{{ nombre_web }}/nuevo
+        done
+      args:
+        executable: /bin/bash
+      register: rafaga
+      changed_when: false
+
+    - name: Verificar que el proxy limita las peticiones con un 429
+      ansible.builtin.assert:
+        that:
+          - rafaga.stdout_lines[0] == '200'
+          - "'429' in rafaga.stdout_lines"
+        success_msg: "OK: de 20 peticiones a /nuevo, {{ rafaga.stdout_lines | select('equalto', '200') | list | length }} dieron 200 y {{ rafaga.stdout_lines | select('equalto', '429') | list | length }} dieron 429"
 
 - name: Comprobar que web puede conectarse a la base de datos
   hosts: servidores_web
@@ -46,6 +117,24 @@
     - name: Mostrar el resultado
       ansible.builtin.debug:
         msg: "OK: desde web ({{ ip_datos }}) hacia {{ bd_ip }}:3306 → {{ conexion_web.stdout }}"
+
+- name: Comprobar que Apache registra la IP real del cliente
+  hosts: servidores_web
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Buscar en el log de Apache la petición marcada
+      ansible.builtin.shell: "grep 'comprobacion-ip-real' /var/log/apache2/guestbook_access.log | tail -n 1"
+      register: linea
+      changed_when: false
+
+    - name: Verificar que la IP registrada no es la del proxy ni la falseada
+      ansible.builtin.assert:
+        that:
+          - linea.stdout | length > 0
+          - linea.stdout.split()[0] != proxy_front_ip
+          - linea.stdout.split()[0] != '1.2.3.4'
+        success_msg: "OK: Apache registra la IP real del cliente ({{ linea.stdout.split()[0] }}), no la del proxy ({{ proxy_front_ip }}) ni la falseada (1.2.3.4)"
 
 - name: Comprobar que la base de datos rechaza conexiones desde otros sitios
   hosts: servidores_bd
@@ -71,13 +160,21 @@
       ansible.builtin.debug:
         msg: "OK: desde bd ({{ ip_datos }}) → conexión rechazada: {{ conexion_bd.stderr }}"
 
-- name: Comprobar que MariaDB no es accesible desde mi equipo
+- name: Comprobar que web y la base de datos no son accesibles directamente desde mi equipo
   hosts: localhost
   connection: local
   gather_facts: false
   vars:
+    ip_nat_web: "{{ hostvars[groups['servidores_web'][0]]['ansible_host'] }}"
     ip_nat_bd: "{{ hostvars[groups['servidores_bd'][0]]['ansible_host'] }}"
   tasks:
+    - name: Verificar que el puerto 80 de web está cerrado en la red NAT
+      ansible.builtin.wait_for:
+        host: "{{ ip_nat_web }}"
+        port: 80
+        state: stopped
+        timeout: 5
+
     - name: Verificar que el puerto 3306 de bd está cerrado en la red NAT
       ansible.builtin.wait_for:
         host: "{{ ip_nat_bd }}"
@@ -87,4 +184,4 @@
 
     - name: Mostrar el resultado
       ansible.builtin.debug:
-        msg: "OK: desde mi equipo, {{ ip_nat_bd }}:3306 no acepta conexiones"
+        msg: "OK: desde mi equipo, {{ ip_nat_web }}:80 y {{ ip_nat_bd }}:3306 no aceptan conexiones"
