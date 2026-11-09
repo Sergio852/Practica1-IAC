@@ -66,3 +66,31 @@
     owner: root
     group: www-data
     mode: "0640"
+
+- name: Hacer que Apache escuche solo en la IP de la red entre el proxy y web
+  ansible.builtin.lineinfile:
+    path: /etc/apache2/ports.conf
+    regexp: '^Listen (.*:)?80$'
+    line: "Listen {{ ip_front }}:80"
+  notify: Reiniciar Apache
+
+- name: Activar el módulo remoteip de Apache
+  ansible.builtin.command:
+    cmd: a2enmod remoteip
+    creates: /etc/apache2/mods-enabled/remoteip.load
+  notify: Reiniciar Apache
+
+- name: Configurar remoteip para fiarse solo del proxy
+  ansible.builtin.template:
+    src: remoteip.conf.j2
+    dest: /etc/apache2/conf-available/ip-real.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recargar Apache
+
+- name: Activar la configuración de remoteip
+  ansible.builtin.command:
+    cmd: a2enconf ip-real
+    creates: /etc/apache2/conf-enabled/ip-real.conf
+  notify: Recargar Apache

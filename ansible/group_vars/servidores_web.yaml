@@ -1,3 +1,6 @@
 # Virtual host de la aplicación
 vhost_nombre: "www.sergiomesa.org"
 vhost_raiz: /var/www/guestbook
+
+# IP del proxy en la red p1-front: el único al que Apache le cree la IP del cliente
+proxy_front_ip: "{{ hostvars[groups['proxies'][0]]['ip_front'] }}"

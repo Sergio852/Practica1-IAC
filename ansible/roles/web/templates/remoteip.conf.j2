@@ -1,0 +1,4 @@
+# IP real del cliente. Generado por Ansible.
+# Solo me fío de X-Forwarded-For si la petición viene del proxy.
+RemoteIPHeader X-Forwarded-For
+RemoteIPInternalProxy {{ proxy_front_ip }}
