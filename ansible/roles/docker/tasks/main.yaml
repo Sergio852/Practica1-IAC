@@ -1,0 +1,14 @@
+# Instala Docker y el plugin de Docker Compose desde los repositorios de Debian
+- name: Instalar Docker y Docker Compose
+  ansible.builtin.apt:
+    name:
+      - docker.io
+      - docker-compose
+    state: present
+    lock_timeout: 300
+
+- name: Asegurar que Docker está arrancado y habilitado
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true

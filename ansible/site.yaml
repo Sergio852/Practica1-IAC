@@ -23,3 +23,9 @@
   become: true
   roles:
     - proxy
+
+- name: Servidor de contenedores
+  hosts: servidores_docker
+  become: true
+  roles:
+    - docker
