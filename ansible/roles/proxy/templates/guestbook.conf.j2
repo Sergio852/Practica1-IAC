@@ -1,4 +1,4 @@
-# Proxy inverso hacia el servidor web. Generado por Ansible.
+# Proxy inverso del escenario. Generado por Ansible.
 
 # Caché de ficheros estáticos
 proxy_cache_path {{ cache_dir }} levels=1:2 keys_zone=estaticos:10m max_size={{ cache_max }} inactive=60m use_temp_path=off;
@@ -10,14 +10,18 @@ upstream web_apache {
     server {{ web_front_ip }}:80;
 }
 
-# HTTP: solo redirige a HTTPS
-server {
-    listen 80;
-    server_name {{ proxy_nombre }};
-    return 301 https://{{ proxy_nombre }}$request_uri;
+upstream estado_gatus {
+    server {{ docker_front_ip }}:{{ docker_puerto }};
 }
 
-# HTTPS: sirve la aplicación a través de web
+# HTTP: solo redirige a HTTPS, para los dos nombres
+server {
+    listen 80;
+    server_name {{ proxy_nombre }} {{ estado_nombre }};
+    return 301 https://$host$request_uri;
+}
+
+# HTTPS: la guestbook, a través de web
 server {
     listen 443 ssl;
     server_name {{ proxy_nombre }};
@@ -52,5 +56,25 @@ server {
     # Todo lo demás (las páginas de la aplicación) no se cachea ni se limita
     location / {
         proxy_pass http://web_apache;
+    }
+}
+
+# HTTPS: el panel de estado (Gatus, en contenedores en la máquina docker)
+server {
+    listen 443 ssl;
+    server_name {{ estado_nombre }};
+
+    ssl_certificate     /etc/ssl/certs/proxy.crt;
+    ssl_certificate_key /etc/ssl/private/proxy.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+
+    add_header Strict-Transport-Security "max-age={{ hsts_max_age }}" always;
+
+    location / {
+        proxy_pass http://estado_gatus;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }

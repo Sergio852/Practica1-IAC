@@ -76,7 +76,7 @@
     - name: Crear el fichero de extensiones con el SAN
       ansible.builtin.copy:
         content: |
-          subjectAltName=DNS:{{ proxy_nombre }}
+          subjectAltName=DNS:{{ proxy_nombre }},DNS:{{ estado_nombre }}
           basicConstraints=CA:FALSE
           keyUsage=digitalSignature,keyEncipherment
           extendedKeyUsage=serverAuth
@@ -84,6 +84,12 @@
           subjectKeyIdentifier=hash
         dest: "{{ pki_dir }}/proxy.ext"
         mode: "0644"
+      register: extensiones
+
+    - name: Comprobar si ya existe el certificado del proxy
+      ansible.builtin.stat:
+        path: "{{ pki_dir }}/proxy.crt"
+      register: certificado
 
     - name: Firmar el certificado con la CA
       ansible.builtin.command:
@@ -105,7 +111,7 @@
           - "{{ pki_dir }}/proxy.ext"
           - -out
           - "{{ pki_dir }}/proxy.crt"
-        creates: "{{ pki_dir }}/proxy.crt"
+      when: extensiones.changed or not certificado.stat.exists
 
 - name: Copiar el certificado al proxy
   ansible.builtin.copy:
