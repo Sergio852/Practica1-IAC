@@ -31,6 +31,15 @@ locals {
         { red = "datos", mac = "52:54:00:02:00:11", ip = var.ip_bd_datos },
       ]
     }
+    docker = {
+      imagen  = var.imagen_docker
+      memoria = var.memoria_docker
+      grupo   = "servidores_docker"
+      redes = [
+        { red = "nat", mac = "52:54:00:01:00:13", ip = null },
+        { red = "front", mac = "52:54:00:03:00:13", ip = var.ip_docker_front },
+      ]
+    }
   }
 
   # ID de cada red, para enlazar las tarjetas de las máquinas

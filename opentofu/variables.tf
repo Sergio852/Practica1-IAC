@@ -87,3 +87,21 @@ variable "ip_web_front" {
   type        = string
   default     = "10.0.1.11"
 }
+
+variable "imagen_docker" {
+  description = "Volumen base Debian 13 para la máquina de contenedores"
+  type        = string
+  default     = "debian13-base.qcow2"
+}
+
+variable "memoria_docker" {
+  description = "Memoria (MiB) de la máquina de contenedores"
+  type        = number
+  default     = 1024
+}
+
+variable "ip_docker_front" {
+  description = "IP estática de la máquina de contenedores en la red p1-front"
+  type        = string
+  default     = "10.0.1.12"
+}
