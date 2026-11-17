@@ -1,0 +1,39 @@
+# Despliega Gatus, el panel de estado del escenario, con Docker Compose
+- name: Crear el directorio del panel y el de su configuración
+  ansible.builtin.file:
+    path: "{{ gatus_dir }}/config"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Copiar mi CA para que Gatus se fíe del certificado del proxy
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/pki/ca.crt"
+    dest: "{{ gatus_dir }}/config/ca.crt"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reiniciar Gatus
+
+- name: Generar la configuración de Gatus
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: "{{ gatus_dir }}/config/config.yaml"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reiniciar Gatus
+
+- name: Generar el compose.yaml
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ gatus_dir }}/compose.yaml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Levantar Gatus con Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: "{{ gatus_dir }}"
+    state: present

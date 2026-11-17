@@ -1,0 +1,10 @@
+# Panel de estado (Gatus) con Docker Compose
+gatus_version: "v5.36.0"
+gatus_dir: /opt/estado
+gatus_puerto: 8080
+gatus_intervalo: 30s
+
+# Lo que vigila, tomado del inventario y de las variables de los otros grupos
+nombre_web: "{{ hostvars[groups['servidores_web'][0]]['vhost_nombre'] }}"
+proxy_front_ip: "{{ hostvars[groups['proxies'][0]]['ip_front'] }}"
+web_front_ip: "{{ hostvars[groups['servidores_web'][0]]['ip_front'] }}"

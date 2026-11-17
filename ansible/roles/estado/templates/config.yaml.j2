@@ -1,0 +1,49 @@
+# Configuración de Gatus. Generado por Ansible.
+storage:
+  type: sqlite
+  path: /data/gatus.db
+
+ui:
+  title: "Estado del escenario | Proyecto 1"
+  header: "Estado del escenario"
+
+endpoints:
+  - name: Guestbook por HTTPS
+    group: Aplicación
+    url: "https://{{ nombre_web }}/"
+    interval: {{ gatus_intervalo }}
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 500"
+      - "[CERTIFICATE_EXPIRATION] > 720h"
+
+  - name: Base de datos (API de la aplicación)
+    group: Aplicación
+    url: "https://{{ nombre_web }}/api/lista"
+    interval: {{ gatus_intervalo }}
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: Redirección de HTTP a HTTPS
+    group: Proxy
+    url: "http://{{ nombre_web }}/"
+    interval: {{ gatus_intervalo }}
+    client:
+      ignore-redirect: true
+    conditions:
+      - "[STATUS] == 301"
+
+  - name: Puerto 443 del proxy
+    group: Proxy
+    url: "tcp://{{ proxy_front_ip }}:443"
+    interval: {{ gatus_intervalo }}
+    conditions:
+      - "[CONNECTED] == true"
+
+  - name: Apache en web
+    group: Servidores
+    url: "http://{{ web_front_ip }}/"
+    interval: {{ gatus_intervalo }}
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 500"

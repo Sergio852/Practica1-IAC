@@ -1,0 +1,17 @@
+# Panel de estado del escenario. Generado por Ansible.
+services:
+  gatus:
+    image: twinproduction/gatus:{{ gatus_version }}
+    restart: unless-stopped
+    ports:
+      - "{{ ip_front }}:{{ gatus_puerto }}:8080"
+    environment:
+      SSL_CERT_FILE: /config/ca.crt
+    extra_hosts:
+      - "{{ nombre_web }}:{{ proxy_front_ip }}"
+    volumes:
+      - ./config:/config:ro
+      - datos:/data
+
+volumes:
+  datos:

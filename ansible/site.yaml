@@ -29,3 +29,4 @@
   become: true
   roles:
     - docker
+    - estado
