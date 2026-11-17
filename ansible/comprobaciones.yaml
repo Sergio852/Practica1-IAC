@@ -185,3 +185,51 @@
     - name: Mostrar el resultado
       ansible.builtin.debug:
         msg: "OK: desde mi equipo, {{ ip_nat_web }}:80 y {{ ip_nat_bd }}:3306 no aceptan conexiones"
+
+- name: Comprobar el panel de estado desde mi equipo, a través del proxy
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    nombre_estado: "{{ hostvars[groups['proxies'][0]]['estado_nombre'] }}"
+    ca_propia: "{{ playbook_dir }}/pki/ca.crt"
+    ip_nat_docker: "{{ hostvars[groups['servidores_docker'][0]]['ansible_host'] }}"
+  tasks:
+    - name: Pedir el panel por HTTP sin seguir la redirección
+      ansible.builtin.uri:
+        url: "http://{{ nombre_estado }}/"
+        follow_redirects: none
+        status_code: 301
+      register: redireccion_estado
+
+    - name: Verificar que el panel redirige a HTTPS
+      ansible.builtin.assert:
+        that: (redireccion_estado.location | default('')) == ('https://' ~ nombre_estado ~ '/')
+        success_msg: "OK: http://{{ nombre_estado }}/ responde 301 hacia {{ redireccion_estado.location }}"
+
+    - name: Consultar por HTTPS el estado de las comprobaciones del panel
+      ansible.builtin.uri:
+        url: "https://{{ nombre_estado }}/api/v1/endpoints/statuses"
+        ca_path: "{{ ca_propia }}"
+        return_content: true
+      register: panel
+
+    - name: Verificar que todas las comprobaciones del panel están en verde
+      ansible.builtin.assert:
+        that:
+          - estados | length > 0
+          - false not in estados
+        success_msg: "OK: el panel vigila {{ estados | length }} servicios y todos están en verde"
+      vars:
+        estados: "{{ panel.json | map(attribute='results') | map('last') | map(attribute='success') | list }}"
+
+    - name: Verificar que el panel no es accesible directamente en la máquina docker
+      ansible.builtin.wait_for:
+        host: "{{ ip_nat_docker }}"
+        port: 8080
+        state: stopped
+        timeout: 5
+
+    - name: Mostrar el resultado
+      ansible.builtin.debug:
+        msg: "OK: desde mi equipo, {{ ip_nat_docker }}:8080 no acepta conexiones: el panel solo responde al proxy"
