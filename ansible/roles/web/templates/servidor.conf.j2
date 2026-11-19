@@ -1,0 +1,3 @@
+# Cabecera con el nombre del servidor web que responde. Generado por Ansible.
+# Sirve para ver a qué web ha mandado el proxy cada petición.
+Header always set X-Servidor "{{ inventory_hostname }}"

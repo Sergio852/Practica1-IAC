@@ -94,3 +94,24 @@
     cmd: a2enconf ip-real
     creates: /etc/apache2/conf-enabled/ip-real.conf
   notify: Recargar Apache
+
+- name: Activar el módulo headers de Apache
+  ansible.builtin.command:
+    cmd: a2enmod headers
+    creates: /etc/apache2/mods-enabled/headers.load
+  notify: Reiniciar Apache
+
+- name: Añadir la cabecera X-Servidor con el nombre de la web
+  ansible.builtin.template:
+    src: servidor.conf.j2
+    dest: /etc/apache2/conf-available/servidor.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recargar Apache
+
+- name: Activar la configuración de la cabecera X-Servidor
+  ansible.builtin.command:
+    cmd: a2enconf servidor
+    creates: /etc/apache2/conf-enabled/servidor.conf
+  notify: Recargar Apache
