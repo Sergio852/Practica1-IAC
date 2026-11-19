@@ -23,9 +23,22 @@ variable "imagen_bd" {
 }
 
 variable "memoria_web" {
-  description = "Memoria (MiB) del servidor web"
+  description = "Memoria (MiB) de cada servidor web"
   type        = number
-  default     = 1024
+  default     = 768
+}
+
+variable "ips_webs" {
+  description = "IP estáticas de cada servidor web en la red de datos y en p1-front"
+  type = map(object({
+    datos = string
+    front = string
+  }))
+  default = {
+    web1 = { datos = "10.0.0.21", front = "10.0.1.21" }
+    web2 = { datos = "10.0.0.22", front = "10.0.1.22" }
+    web3 = { datos = "10.0.0.23", front = "10.0.1.23" }
+  }
 }
 
 variable "memoria_bd" {
@@ -44,12 +57,6 @@ variable "red_nat" {
   description = "Rango de la red NAT con DHCP"
   type        = string
   default     = "192.168.234.0/24"
-}
-
-variable "ip_web_datos" {
-  description = "IP estática de web en la red de datos"
-  type        = string
-  default     = "10.0.0.10"
 }
 
 variable "ip_bd_datos" {
@@ -80,12 +87,6 @@ variable "ip_proxy_front" {
   description = "IP estática del proxy en la red p1-front"
   type        = string
   default     = "10.0.1.10"
-}
-
-variable "ip_web_front" {
-  description = "IP estática de web en la red p1-front"
-  type        = string
-  default     = "10.0.1.11"
 }
 
 variable "imagen_docker" {

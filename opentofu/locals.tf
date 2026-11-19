@@ -12,14 +12,34 @@ locals {
         { red = "front", mac = "52:54:00:03:00:12", ip = var.ip_proxy_front },
       ]
     }
-    web = {
+    web1 = {
       imagen  = var.imagen_web
       memoria = var.memoria_web
       grupo   = "servidores_web"
       redes = [
-        { red = "nat", mac = "52:54:00:01:00:10", ip = null },
-        { red = "datos", mac = "52:54:00:02:00:10", ip = var.ip_web_datos },
-        { red = "front", mac = "52:54:00:03:00:10", ip = var.ip_web_front },
+        { red = "nat", mac = "52:54:00:01:00:21", ip = null },
+        { red = "datos", mac = "52:54:00:02:00:21", ip = var.ips_webs.web1.datos },
+        { red = "front", mac = "52:54:00:03:00:21", ip = var.ips_webs.web1.front },
+      ]
+    }
+    web2 = {
+      imagen  = var.imagen_web
+      memoria = var.memoria_web
+      grupo   = "servidores_web"
+      redes = [
+        { red = "nat", mac = "52:54:00:01:00:22", ip = null },
+        { red = "datos", mac = "52:54:00:02:00:22", ip = var.ips_webs.web2.datos },
+        { red = "front", mac = "52:54:00:03:00:22", ip = var.ips_webs.web2.front },
+      ]
+    }
+    web3 = {
+      imagen  = var.imagen_web
+      memoria = var.memoria_web
+      grupo   = "servidores_web"
+      redes = [
+        { red = "nat", mac = "52:54:00:01:00:23", ip = null },
+        { red = "datos", mac = "52:54:00:02:00:23", ip = var.ips_webs.web3.datos },
+        { red = "front", mac = "52:54:00:03:00:23", ip = var.ips_webs.web3.front },
       ]
     }
     bd = {
