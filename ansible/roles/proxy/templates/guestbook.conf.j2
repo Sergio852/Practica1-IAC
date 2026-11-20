@@ -6,9 +6,17 @@ proxy_cache_path {{ cache_dir }} levels=1:2 keys_zone=estaticos:10m max_size={{ 
 # Límite de peticiones: se cuenta por IP del cliente
 limit_req_zone $binary_remote_addr zone=nuevo:10m rate={{ limite_tasa }};
 
-# Balanceo de carga: las peticiones se reparten por turnos entre todas las webs.
+# Sesiones persistentes: cada usuario lleva una cookie con un identificador.
+# Si todavía no la tiene (primera visita), se usa un identificador nuevo.
+map $cookie_{{ cookie_usuario }} $clave_usuario {
+    ""      $request_id;
+    default $cookie_{{ cookie_usuario }};
+}
+
+# Balanceo de carga: cada usuario va siempre a la misma web según su cookie.
 # Si una web falla max_fails veces, se deja fuera durante fail_timeout.
 upstream web_apache {
+    hash $clave_usuario consistent;
 {% for ip in web_front_ips %}
     server {{ ip }}:80 max_fails={{ balanceo_max_fallos }} fail_timeout={{ balanceo_tiempo_fuera }};
 {% endfor %}
@@ -35,6 +43,9 @@ server {
     ssl_protocols       TLSv1.2 TLSv1.3;
 
     add_header Strict-Transport-Security "max-age={{ hsts_max_age }}" always;
+
+    # Le doy (o le renuevo) al usuario su cookie, para que vuelva siempre a la misma web
+    add_header Set-Cookie "{{ cookie_usuario }}=$clave_usuario; Path=/; Secure; HttpOnly; SameSite=Lax" always;
 
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;

@@ -29,3 +29,6 @@ limite_rafaga: 5
 estado_nombre: "estado.sergiomesa.org"
 docker_front_ip: "{{ hostvars[groups['servidores_docker'][0]]['ip_front'] }}"
 docker_puerto: "{{ hostvars[groups['servidores_docker'][0]]['gatus_puerto'] }}"
+
+# Sesiones persistentes: nombre de la cookie con la que el proxy reconoce a cada usuario
+cookie_usuario: usuario_web
