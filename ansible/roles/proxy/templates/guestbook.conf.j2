@@ -6,8 +6,12 @@ proxy_cache_path {{ cache_dir }} levels=1:2 keys_zone=estaticos:10m max_size={{ 
 # Límite de peticiones: se cuenta por IP del cliente
 limit_req_zone $binary_remote_addr zone=nuevo:10m rate={{ limite_tasa }};
 
+# Balanceo de carga: las peticiones se reparten por turnos entre todas las webs.
+# Si una web falla max_fails veces, se deja fuera durante fail_timeout.
 upstream web_apache {
-    server {{ web_front_ip }}:80;
+{% for ip in web_front_ips %}
+    server {{ ip }}:80 max_fails={{ balanceo_max_fallos }} fail_timeout={{ balanceo_tiempo_fuera }};
+{% endfor %}
 }
 
 upstream estado_gatus {
@@ -21,7 +25,7 @@ server {
     return 301 https://$host$request_uri;
 }
 
-# HTTPS: la guestbook, a través de web
+# HTTPS: la guestbook, repartida entre las webs
 server {
     listen 443 ssl;
     server_name {{ proxy_nombre }};
@@ -36,6 +40,10 @@ server {
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
+
+    # Si una web no responde o da error, la petición se repite en otra web
+    proxy_next_upstream error timeout http_502 http_503 http_504;
+    proxy_connect_timeout {{ balanceo_tiempo_conexion }};
 
     # Ficheros estáticos: se sirven desde la caché del proxy
     location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff2?)$ {

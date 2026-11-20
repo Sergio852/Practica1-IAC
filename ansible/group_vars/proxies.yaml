@@ -5,8 +5,14 @@ ca_nombre: "CA de Sergio"
 # Nombre del virtual host al que sirve el proxy: el mismo que usa web
 proxy_nombre: "{{ hostvars[groups['servidores_web'][0]]['vhost_nombre'] }}"
 
-# IP de web en la red p1-front (la que hay entre el proxy y web), tomada del inventario
-web_front_ip: "{{ hostvars[groups['servidores_web'][0]]['ip_front'] }}"
+# IP de todas las webs en la red p1-front, tomadas del inventario: el proxy reparte entre ellas
+web_front_ips: "{{ groups['servidores_web'] | map('extract', hostvars, 'ip_front') | list }}"
+
+# Balanceo: fallos seguidos para dar una web por caída y tiempo que se queda fuera
+balanceo_max_fallos: 2
+balanceo_tiempo_fuera: 10s
+# Tiempo máximo para conectar con una web antes de probar con otra
+balanceo_tiempo_conexion: 2s
 
 # HSTS: tiempo (en segundos) que el navegador recuerda que este sitio solo va por HTTPS
 hsts_max_age: 300
