@@ -32,3 +32,5 @@ docker_puerto: "{{ hostvars[groups['servidores_docker'][0]]['gatus_puerto'] }}"
 
 # Sesiones persistentes: nombre de la cookie con la que el proxy reconoce a cada usuario
 cookie_usuario: usuario_web
+# Página de mantenimiento: se enseña si no responde ninguna web
+mantenimiento_dir: /var/www/mantenimiento

@@ -56,6 +56,15 @@ server {
     proxy_next_upstream error timeout http_502 http_503 http_504;
     proxy_connect_timeout {{ balanceo_tiempo_conexion }};
 
+
+    # Si no responde ninguna web, enseño mi página de mantenimiento con un 503
+    error_page 502 503 504 =503 /mantenimiento.html;
+
+    location = /mantenimiento.html {
+        root {{ mantenimiento_dir }};
+        internal;
+    }
+
     # Ficheros estáticos: se sirven desde la caché del proxy
     location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
         proxy_pass http://web_apache;

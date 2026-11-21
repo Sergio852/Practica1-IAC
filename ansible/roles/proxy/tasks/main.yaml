@@ -168,3 +168,19 @@
     name: nginx
     state: started
     enabled: true
+
+- name: Crear el directorio de la página de mantenimiento
+  ansible.builtin.file:
+    path: "{{ mantenimiento_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Crear la página de mantenimiento
+  ansible.builtin.template:
+    src: mantenimiento.html.j2
+    dest: "{{ mantenimiento_dir }}/mantenimiento.html"
+    owner: root
+    group: root
+    mode: "0644"
