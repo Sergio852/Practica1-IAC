@@ -4,3 +4,7 @@ vhost_raiz: /var/www/guestbook
 
 # IP del proxy en la red p1-front: el único al que Apache le cree la IP del cliente
 proxy_front_ip: "{{ hostvars[groups['proxies'][0]]['ip_front'] }}"
+
+# Versión del despliegue de las webs: la enseña la cabecera X-Version.
+# Para actualizar, la cambio y lanzo actualizar.yaml, que va web a web.
+web_version: "2"

@@ -1,0 +1,59 @@
+# Actualización de las webs sin cortar el servicio.
+# Va web a web: la saca del balanceo, la actualiza, comprueba que responde
+# y la vuelve a meter antes de pasar a la siguiente.
+
+- name: Actualizar las webs de una en una
+  hosts: servidores_web
+  become: true
+  serial: 1
+  max_fail_percentage: 0
+
+  vars:
+    proxy: "{{ groups['proxies'][0] }}"
+    proxy_conf: /etc/nginx/sites-available/guestbook
+    opciones_web: "max_fails={{ hostvars[proxy]['balanceo_max_fallos'] }} fail_timeout={{ hostvars[proxy]['balanceo_tiempo_fuera'] }}"
+
+  pre_tasks:
+    - name: Sacar esta web del balanceo (down)
+      ansible.builtin.lineinfile:
+        path: "{{ proxy_conf }}"
+        regexp: '^\s*server {{ ip_front }}:80 '
+        line: "    server {{ ip_front }}:80 {{ opciones_web }} down;"
+      delegate_to: "{{ proxy }}"
+
+    - name: Recargar Nginx para que deje de mandarle peticiones
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
+      delegate_to: "{{ proxy }}"
+
+    - name: Esperar a que terminen las peticiones que tenía en curso
+      ansible.builtin.pause:
+        seconds: 10
+
+  roles:
+    - web
+
+  post_tasks:
+    - name: Comprobar desde el proxy que la web responde con la versión nueva
+      ansible.builtin.uri:
+        url: "http://{{ ip_front }}/"
+        status_code: 200
+      register: respuesta
+      until: respuesta.status == 200 and respuesta.x_version == web_version
+      retries: 5
+      delay: 2
+      delegate_to: "{{ proxy }}"
+
+    - name: Volver a meter esta web en el balanceo
+      ansible.builtin.lineinfile:
+        path: "{{ proxy_conf }}"
+        regexp: '^\s*server {{ ip_front }}:80 '
+        line: "    server {{ ip_front }}:80 {{ opciones_web }};"
+      delegate_to: "{{ proxy }}"
+
+    - name: Recargar Nginx para que vuelva a mandarle peticiones
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
+      delegate_to: "{{ proxy }}"
