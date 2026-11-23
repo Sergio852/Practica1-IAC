@@ -39,11 +39,13 @@ endpoints:
     interval: {{ gatus_intervalo }}
     conditions:
       - "[CONNECTED] == true"
+{% for web in groups['servidores_web'] %}
 
-  - name: Apache en web
-    group: Servidores
-    url: "http://{{ web_front_ip }}/"
+  - name: Apache en {{ web }}
+    group: Servidores web
+    url: "http://{{ hostvars[web]['ip_front'] }}/"
     interval: {{ gatus_intervalo }}
     conditions:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 500"
+{% endfor %}
