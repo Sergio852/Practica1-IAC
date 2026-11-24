@@ -12,6 +12,19 @@ services:
     volumes:
       - ./config:/config:ro
       - datos:/data
+{% for n in range(1, usuarios_simulados + 1) %}
+
+  # Usuario simulado {{ n }}: solo arranca con el perfil "simulacion"
+  usuario{{ n }}:
+    image: curlimages/curl:{{ curl_version }}
+    profiles: ["simulacion"]
+    entrypoint: ["sh", "/usuario.sh"]
+    extra_hosts:
+      - "{{ nombre_web }}:{{ proxy_front_ip }}"
+    volumes:
+      - ./usuario.sh:/usuario.sh:ro
+      - ./config/ca.crt:/ca.crt:ro
+{% endfor %}
 
 volumes:
   datos:

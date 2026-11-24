@@ -1,0 +1,14 @@
+#!/bin/sh
+# Usuario simulado. Generado por Ansible.
+# Entra en la web cada segundo guardando su cookie, como un navegador,
+# y escribe el código HTTP, la web que le ha respondido y su versión.
+while true; do
+  : > /tmp/cabeceras
+  codigo=$(curl -s -o /dev/null -D /tmp/cabeceras -w '%{http_code}' \
+    -c /tmp/cookies -b /tmp/cookies --cacert /ca.crt \
+    https://{{ nombre_web }}/)
+  servidor=$(grep -i '^x-servidor:' /tmp/cabeceras | cut -d' ' -f2 | tr -d '\r')
+  version=$(grep -i '^x-version:' /tmp/cabeceras | cut -d' ' -f2 | tr -d '\r')
+  echo "$(date +%H:%M:%S)  HTTP $codigo  web: ${servidor:-ninguna}  versión: ${version:--}"
+  sleep 1
+done

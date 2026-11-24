@@ -37,3 +37,11 @@
   community.docker.docker_compose_v2:
     project_src: "{{ gatus_dir }}"
     state: present
+
+- name: Generar el script de los usuarios simulados
+  ansible.builtin.template:
+    src: usuario.sh.j2
+    dest: "{{ gatus_dir }}/usuario.sh"
+    owner: root
+    group: root
+    mode: "0755"

@@ -7,4 +7,4 @@ proxy_front_ip: "{{ hostvars[groups['proxies'][0]]['ip_front'] }}"
 
 # Versión del despliegue de las webs: la enseña la cabecera X-Version.
 # Para actualizar, la cambio y lanzo actualizar.yaml, que va web a web.
-web_version: "2"
+web_version: "3"

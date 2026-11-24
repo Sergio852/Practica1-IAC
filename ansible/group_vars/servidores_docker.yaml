@@ -7,3 +7,8 @@ gatus_intervalo: 30s
 # Lo que vigila, tomado del inventario y de las variables de los otros grupos
 nombre_web: "{{ hostvars[groups['servidores_web'][0]]['vhost_nombre'] }}"
 proxy_front_ip: "{{ hostvars[groups['proxies'][0]]['ip_front'] }}"
+
+# Usuarios simulados: contenedores que entran a la web cada segundo, cada uno con su cookie.
+# Van en el perfil "simulacion" de Compose, asi que solo arrancan cuando yo quiero.
+usuarios_simulados: 4
+curl_version: "8.16.0"
